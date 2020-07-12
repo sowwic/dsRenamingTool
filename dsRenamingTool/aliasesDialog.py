@@ -7,6 +7,7 @@ from dsRenamingTool import dialogBase
 class AliasDialog(dialogBase._modalDialog):
 
     DEFAULT_SUFFIX_ALIASES = {
+        "transform": "GRP",
         "mesh": "PLY",
         "nurbsCurve": "CRV",
         "nurbsSurface": "NURB",
