@@ -1,12 +1,19 @@
 import pymel.core as pm
 import pymel.api as pma
+import logging
+import logging.config
 import json
 from PySide2 import QtWidgets
 
 from dsRenamingTool import renameFn
 from dsRenamingTool import aliasesDialog
+from dsRenamingTool import config
 from maya.app.general.mayaMixin import MayaQWidgetDockableMixin
 from shiboken2 import getCppPointer
+
+
+# Setup logging
+LOGGER = logging.getLogger(__name__)
 
 
 class Dialog(MayaQWidgetDockableMixin, QtWidgets.QWidget):
@@ -138,9 +145,11 @@ class Dialog(MayaQWidgetDockableMixin, QtWidgets.QWidget):
     def rename(self):
         sel = pm.ls(sl=1, r=1)
         tempList = []
+        aliasesDict = json.loads(pm.optionVar.get("dsRenamingToolSuffixAliases", json.dumps(aliasesDialog.AliasDialog.DEFAULT_SUFFIX_ALIASES, sort_keys=True)))
         for each in sel:
             tempList.append(renameFn.RenameUtils.rename(each,
                                                         "tempName",
+                                                        aliasesDict,
                                                         prefix="NULL",
                                                         suffix="NULL",
                                                         autoSuffix=False,
@@ -150,6 +159,7 @@ class Dialog(MayaQWidgetDockableMixin, QtWidgets.QWidget):
         for each in tempList:
             renameFn.RenameUtils.rename(each,
                                         self.baseNameLineEdit.text(),
+                                        aliasesDict,
                                         prefix=self.prefixLineEdit.text(),
                                         suffix=self.suffixLineEdit.text(),
                                         autoSuffix=self.autoSuffixCheckBox.isChecked(),

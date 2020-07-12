@@ -1,13 +1,18 @@
 import pymel.core as pm
+import logging
 import json
 from PySide2 import QtWidgets, QtCore
 from dsRenamingTool import dialogBase
+
+
+LOGGER = logging.getLogger(__name__)
 
 
 class AliasDialog(dialogBase._modalDialog):
 
     DEFAULT_SUFFIX_ALIASES = {
         "transform": "GRP",
+        "joint": "JNT",
         "mesh": "PLY",
         "nurbsCurve": "CRV",
         "nurbsSurface": "NURB",
@@ -18,12 +23,16 @@ class AliasDialog(dialogBase._modalDialog):
         "camera": "CAM",
     }
 
+    @classmethod
+    def checkOptionVar(cls):
+        pm.optionVar.get("dsRenamingToolSuffixAliases", json.dumps(cls.DEFAULT_SUFFIX_ALIASES, sort_keys=True))
+
     def __init__(self, parent=None, title="Edit aliases"):
         super(AliasDialog, self).__init__(parent=parent)
 
         # Setup UI
         self.setWindowTitle(title)
-        self.setMinimumSize(300, 200)
+        self.setMinimumSize(300, 400)
 
         # Update table
         self.updateAliasTable()
@@ -31,14 +40,21 @@ class AliasDialog(dialogBase._modalDialog):
     def createActions(self):
         # Menubar
         self.menuBar = QtWidgets.QMenuBar(self)
+        fileMenu = self.menuBar.addMenu("&File")
         editMenu = self.menuBar.addMenu("&Edit")
 
         # Actions
+        self.exportAliasesAction = QtWidgets.QAction("Export aliases", self)
+        self.importAliasesAction = QtWidgets.QAction("Import aliases", self)
         self.addAliasesAction = QtWidgets.QAction("Add new alias", self)
         self.deleteAliasAction = QtWidgets.QAction("Delete selected", self)
         self.resetAliasesAction = QtWidgets.QAction("Reset to defaults", self)
 
         # Populate menubar
+        # File menu
+        fileMenu.addAction(self.exportAliasesAction)
+        fileMenu.addAction(self.importAliasesAction)
+        # Edit menu
         editMenu.addAction(self.addAliasesAction)
         editMenu.addAction(self.deleteAliasAction)
         editMenu.addAction(self.resetAliasesAction)
@@ -53,7 +69,6 @@ class AliasDialog(dialogBase._modalDialog):
 
         # Dialog buttons
         self.confirmButton = QtWidgets.QPushButton("Confirm")
-        self.saveButton = QtWidgets.QPushButton("Save")
         self.cancelButton = QtWidgets.QPushButton("Cancel")
 
     def createLayouts(self):
@@ -68,7 +83,6 @@ class AliasDialog(dialogBase._modalDialog):
         buttonsLayout = QtWidgets.QHBoxLayout()
         buttonsLayout.addStretch()
         buttonsLayout.addWidget(self.confirmButton)
-        buttonsLayout.addWidget(self.saveButton)
         buttonsLayout.addWidget(self.cancelButton)
 
         # Populate main
@@ -78,10 +92,13 @@ class AliasDialog(dialogBase._modalDialog):
     def createConnections(self):
         # Buttons
         self.confirmButton.clicked.connect(self.confirmAndClose)
-        self.saveButton.clicked.connect(self.saveAliases)
         self.cancelButton.clicked.connect(self.close)
 
-        # Actions
+        # MenuBar
+        # File menu
+        self.exportAliasesAction.triggered.connect(self.exportAliases)
+        self.importAliasesAction.triggered.connect(self.importAliases)
+
         self.addAliasesAction.triggered.connect(self.aliasesTable.addNewEntry)
         self.deleteAliasAction.triggered.connect(self.aliasesTable.deleteSelectedRow)
         self.resetAliasesAction.triggered.connect(self.resetToDefault)
@@ -123,15 +140,43 @@ class AliasDialog(dialogBase._modalDialog):
         self.checkOptionVar()
 
     def resetToDefault(self):
+        self.loadFromDict(self.DEFAULT_SUFFIX_ALIASES)
+
+    def loadFromDict(self, aliasDict):
         self.aliasesTable.setRowCount(0)
-        for i, k in enumerate(self.DEFAULT_SUFFIX_ALIASES.keys()):
+        for i, k in enumerate(aliasDict.keys()):
             self.aliasesTable.insertRow(i)
             self.insertItem(i, 0, text=k)
-            self.insertItem(i, 1, text=self.DEFAULT_SUFFIX_ALIASES[k])
+            self.insertItem(i, 1, text=aliasDict[k])
 
-    @classmethod
-    def checkOptionVar(cls):
-        pm.optionVar.get("dsRenamingToolSuffixAliases", json.dumps(cls.DEFAULT_SUFFIX_ALIASES, sort_keys=True))
+    def exportAliases(self):
+        exportPath = QtWidgets.QFileDialog.getSaveFileName(self, "Export aliases", "/home/namingAliases.json", "JSON files (*.json)")[0]
+        if not exportPath:
+            return
+
+        try:
+            with open(exportPath, "w") as exportFile:
+                json.dump(self.getAliasTableData(), exportFile, indent=4, separators=(",", ":"))
+            LOGGER.info("Exported aliases to: {0}".format(exportPath))
+        except IOError:
+            LOGGER.error("Failed to export aliases", exc_info=1)
+
+    def importAliases(self):
+        importPath = QtWidgets.QFileDialog.getOpenFileName(self, "Import aliases", "/home/", "JSON files (*.json)")[0]
+        if not importPath:
+            return
+
+        with open(importPath, "r") as importFile:
+            importedData = json.load(importFile)
+        if not importedData:
+            LOGGER.error("No aliases found in {0}".format(importPath))
+            return
+
+        try:
+            self.loadFromDict(importedData)
+            LOGGER.info("Succesfully loaded aliases from {0}".format(importPath))
+        except Exception:
+            LOGGER.error("Failed to load aliases from {0}".format(importPath), exc_info=1)
 
 
 class AliasTable(QtWidgets.QTableWidget):
