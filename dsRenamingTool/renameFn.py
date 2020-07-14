@@ -57,7 +57,6 @@ class RenameUtils:
     @classmethod
     def getSuffix(cls, obj, aliasesDict):
         objType = pm.objectType(obj)
-        aliasesDict = json.loads(pm.optionVar["dsRenamingToolSuffixAliases"])
         if objType == "transform":
             dependNodes = pm.listRelatives(obj, c=1)
             if dependNodes:
