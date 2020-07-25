@@ -126,3 +126,6 @@ dmypy.json
 
 #Project specific
 .vscode/
+.dsToolEnv/
+.dsInstallerEnv/
+installer/

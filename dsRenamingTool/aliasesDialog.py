@@ -127,21 +127,6 @@ class AliasDialog(dialogBase._modalDialog):
 
         return newAliasDict
 
-    def saveAliases(self):
-        self.suffixAliases = self.getAliasTableData()
-        aliasString = json.dumps(self.suffixAliases, sort_keys=True)
-        pm.optionVar["dsRenamingToolSuffixAliases"] = aliasString
-
-    def confirmAndClose(self):
-        self.saveAliases()
-        self.close()
-
-    def showEvent(self, e):
-        self.checkOptionVar()
-
-    def resetToDefault(self):
-        self.loadFromDict(self.DEFAULT_SUFFIX_ALIASES)
-
     def loadFromDict(self, aliasDict):
         self.aliasesTable.setRowCount(0)
         for i, k in enumerate(aliasDict.keys()):
@@ -149,11 +134,27 @@ class AliasDialog(dialogBase._modalDialog):
             self.insertItem(i, 0, text=k)
             self.insertItem(i, 1, text=aliasDict[k])
 
+    # Slots
+    @QtCore.Slot()
+    def saveAliases(self):
+        self.suffixAliases = self.getAliasTableData()
+        aliasString = json.dumps(self.suffixAliases, sort_keys=True)
+        pm.optionVar["dsRenamingToolSuffixAliases"] = aliasString
+
+    @QtCore.Slot()
+    def confirmAndClose(self):
+        self.saveAliases()
+        self.close()
+
+    @QtCore.Slot()
+    def resetToDefault(self):
+        self.loadFromDict(self.DEFAULT_SUFFIX_ALIASES)
+
+    @QtCore.Slot()
     def exportAliases(self):
         exportPath = QtWidgets.QFileDialog.getSaveFileName(self, "Export aliases", "/home/namingAliases.json", "JSON files (*.json)")[0]
         if not exportPath:
             return
-
         try:
             with open(exportPath, "w") as exportFile:
                 json.dump(self.getAliasTableData(), exportFile, indent=4, separators=(",", ":"))
@@ -161,6 +162,7 @@ class AliasDialog(dialogBase._modalDialog):
         except IOError:
             LOGGER.error("Failed to export aliases", exc_info=1)
 
+    @QtCore.Slot()
     def importAliases(self):
         importPath = QtWidgets.QFileDialog.getOpenFileName(self, "Import aliases", "/home/", "JSON files (*.json)")[0]
         if not importPath:
@@ -177,6 +179,11 @@ class AliasDialog(dialogBase._modalDialog):
             LOGGER.info("Succesfully loaded aliases from {0}".format(importPath))
         except Exception:
             LOGGER.error("Failed to load aliases from {0}".format(importPath), exc_info=1)
+
+    # Events
+    def showEvent(self, e):
+        super(AliasDialog, self).showEvent(e)
+        self.checkOptionVar()
 
 
 class AliasTable(QtWidgets.QTableWidget):

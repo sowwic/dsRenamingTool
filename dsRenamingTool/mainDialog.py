@@ -4,12 +4,14 @@ import logging
 import logging.config
 import json
 from PySide2 import QtWidgets
+from PySide2 import QtCore
 
 from dsRenamingTool import renameFn
 from dsRenamingTool import aliasesDialog
 from dsRenamingTool import config
 from maya.app.general.mayaMixin import MayaQWidgetDockableMixin
 from shiboken2 import getCppPointer
+reload(aliasesDialog)
 
 
 # Setup logging
@@ -46,16 +48,17 @@ class Dialog(MayaQWidgetDockableMixin, QtWidgets.QWidget):
         self.setObjectName(self.__class__.UI_NAME)
 
         self.setWindowTitle(self.WINDOW_TITLE)
-        self.setMinimumSize(300, 170)
         self.settings = self.loadSettings()
+        self.updateSizeLimit()
 
-        workspaceControlName = "{0}WorkspaceControl".format(self.UI_NAME)
-        if pm.workspaceControl(workspaceControlName, q=1, ex=1):
-            workspaceControlPtr = long(pma.MQtUtil.findControl(workspaceControlName))
+        self.workspaceControlName = "{0}WorkspaceControl".format(self.UI_NAME)
+        if pm.workspaceControl(self.workspaceControlName, q=1, ex=1):
+            workspaceControlPtr = long(pma.MQtUtil.findControl(self.workspaceControlName))
             widgetPtr = long(getCppPointer(self)[0])
 
             pma.MQtUtil.addWidgetToMayaLayout(widgetPtr, workspaceControlPtr)
 
+        # self.setDockableParameters(heightSizingProperty="fixed", height=170)
         # UI setup
         self.createActions()
         self.createWidgets()
@@ -128,9 +131,10 @@ class Dialog(MayaQWidgetDockableMixin, QtWidgets.QWidget):
         mainLayout.addLayout(renameLayout)
         mainLayout.addLayout(optionsLayout)
         mainLayout.addLayout(self.indexLayout)
+        mainLayout.addStretch()
         mainLayout.addLayout(buttonsLayout)
         mainLayout.setSpacing(10)
-        mainLayout.setContentsMargins(10, 25, 10, 10)
+        mainLayout.setContentsMargins(5, 25, 5, 5)
 
     def createConnections(self):
         self.closeButton.clicked.connect(self.hide)
@@ -167,16 +171,36 @@ class Dialog(MayaQWidgetDockableMixin, QtWidgets.QWidget):
                                         indexPadding=self.indexPaddingSpinBox.value(),
                                         startIndex=self.startingIndexSpinBox.value())
 
+    def updateSizeLimit(self):
+        if self.isFloating():
+            self.setMinimumSize(300, 170)
+            self.setMaximumSize(16777215, 16777215)
+
+            try:
+                self.nativeParentWidget().setMaximumSize(self.maximumSize())
+                self.nativeParentWidget().setMinimumSize(self.minimumSize())
+                self.resize(self.minimumSize())
+            except Exception:
+                pass
+
+        else:
+            try:
+                self.nativeParentWidget().setFixedHeight(200)
+            except BaseException:
+                pass
+
     def editSuffixAliases(self):
         editDialog = aliasesDialog.AliasDialog(parent=self)
         editDialog.show()
 
     # Events
-
     def showEvent(self, e):
-        self.resize(self.minimumSize())
+        self.updateSizeLimit()
 
     def hideEvent(self, e):
+        self.saveSettings()
+
+    def dockCloseEventTriggered(self):
         self.saveSettings()
 
     # Properties
@@ -192,7 +216,7 @@ class Dialog(MayaQWidgetDockableMixin, QtWidgets.QWidget):
         loaded = pm.optionVar.get("dsRiggingRenamingToolSettings", json.dumps(self.DEFAULT_SETTINGS, sort_keys=True))
         return json.loads(loaded)
 
-    # @QtCore.Slot()
+    @QtCore.Slot()
     def saveSettings(self):
         self.settings = {"indexing": self.indexingCheckBox.isChecked(),
                          "indexStart": self.startingIndexSpinBox.value(),
@@ -216,3 +240,4 @@ if __name__ == "__main__":
 
     uiScript = "import dsRenamingTool\ndsRenamer = dsRenamingTool.Dialog()"
     dsRenamer.show(dockable=1, uiScript=uiScript)
+    dsRenamer.updateSizeLimit()
