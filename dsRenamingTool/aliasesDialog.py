@@ -1,11 +1,8 @@
 import pymel.core as pm
-import logging
 import json
 from PySide2 import QtWidgets, QtCore
 from dsRenamingTool import dialogBase
-
-
-LOGGER = logging.getLogger(__name__)
+from dsRenamingTool.loggingFn import Logger
 
 
 class AliasDialog(dialogBase._modalDialog):
@@ -158,9 +155,9 @@ class AliasDialog(dialogBase._modalDialog):
         try:
             with open(exportPath, "w") as exportFile:
                 json.dump(self.getAliasTableData(), exportFile, indent=4, separators=(",", ":"))
-            LOGGER.info("Exported aliases to: {0}".format(exportPath))
+            Logger.info("Exported aliases to: {0}".format(exportPath))
         except IOError:
-            LOGGER.error("Failed to export aliases", exc_info=1)
+            Logger.error("Failed to export aliases", exc_info=1)
 
     @QtCore.Slot()
     def importAliases(self):
@@ -171,14 +168,14 @@ class AliasDialog(dialogBase._modalDialog):
         with open(importPath, "r") as importFile:
             importedData = json.load(importFile)
         if not importedData:
-            LOGGER.error("No aliases found in {0}".format(importPath))
+            Logger.error("No aliases found in {0}".format(importPath))
             return
 
         try:
             self.loadFromDict(importedData)
-            LOGGER.info("Succesfully loaded aliases from {0}".format(importPath))
+            Logger.info("Succesfully loaded aliases from {0}".format(importPath))
         except Exception:
-            LOGGER.error("Failed to load aliases from {0}".format(importPath), exc_info=1)
+            Logger.error("Failed to load aliases from {0}".format(importPath), exc_info=1)
 
     # Events
     def showEvent(self, e):

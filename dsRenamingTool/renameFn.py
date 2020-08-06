@@ -1,8 +1,6 @@
 import pymel.core as pm
 import json
-import logging
-
-LOGGER = logging.getLogger(__name__)
+from dsRenamingTool.loggingFn import Logger
 
 
 class RenameUtils:
@@ -10,7 +8,7 @@ class RenameUtils:
     @classmethod
     def rename(cls, obj, newName, aliasesDict, prefix=None, suffix=None, autoSuffix=False, indexing=True, indexPadding=1, startIndex=0):
         if not newName:
-            LOGGER.warning("No name was specified")
+            Logger.warning("No name was specified")
             return
 
         if prefix:
@@ -65,7 +63,7 @@ class RenameUtils:
         try:
             suffix = aliasesDict[objType]
         except KeyError:
-            LOGGER.warning("No suffix recorded for type: {0}.\nUpdate aliases using suffix alias editor.".format(objType))
+            Logger.warning("No suffix recorded for type: {0}.\nUpdate aliases using suffix alias editor.".format(objType))
             suffix = "OBJ"
 
         return suffix

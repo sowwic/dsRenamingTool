@@ -3,12 +3,12 @@ import pymel.api as pma
 import json
 from PySide2 import QtWidgets
 from PySide2 import QtCore
-
+from dsRenamingTool.loggingFn import Logger
 from dsRenamingTool import renameFn
 from dsRenamingTool import aliasesDialog
-from dsRenamingTool.loggingFn import Logger
 from maya.app.general.mayaMixin import MayaQWidgetDockableMixin
 from shiboken2 import getCppPointer
+# Future remaster UI
 
 
 class Dialog(MayaQWidgetDockableMixin, QtWidgets.QWidget):
