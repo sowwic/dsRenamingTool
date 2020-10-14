@@ -42,7 +42,6 @@ class Dialog(MayaQWidgetDockableMixin, QtWidgets.QWidget):
 
         self.setWindowTitle(self.WINDOW_TITLE)
         self.settings = self.loadSettings()
-        self.updateSizeLimit()
 
         self.workspaceControlName = "{0}WorkspaceControl".format(self.UI_NAME)
         if pm.workspaceControl(self.workspaceControlName, q=1, ex=1):
@@ -164,31 +163,9 @@ class Dialog(MayaQWidgetDockableMixin, QtWidgets.QWidget):
                                         indexPadding=self.indexPaddingSpinBox.value(),
                                         startIndex=self.startingIndexSpinBox.value())
 
-    def updateSizeLimit(self):
-        if self.isFloating():
-            self.setMinimumSize(300, 170)
-            self.setMaximumSize(16777215, 16777215)
-
-            try:
-                self.nativeParentWidget().setMaximumSize(self.maximumSize())
-                self.nativeParentWidget().setMinimumSize(self.minimumSize())
-                self.resize(self.minimumSize())
-            except Exception:
-                pass
-
-        else:
-            try:
-                self.nativeParentWidget().setFixedHeight(200)
-            except BaseException:
-                pass
-
     def editSuffixAliases(self):
         editDialog = aliasesDialog.AliasDialog(parent=self)
         editDialog.show()
-
-    # Events
-    def showEvent(self, e):
-        self.updateSizeLimit()
 
     def hideEvent(self, e):
         self.saveSettings()
@@ -233,4 +210,3 @@ if __name__ == "__main__":
 
     uiScript = "import dsRenamingTool\ndsRenamer = dsRenamingTool.Dialog()"
     dsRenamer.show(dockable=1, uiScript=uiScript)
-    dsRenamer.updateSizeLimit()
