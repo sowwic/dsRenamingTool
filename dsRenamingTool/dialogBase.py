@@ -1,3 +1,4 @@
+import sys
 from PySide2 import QtCore
 from PySide2 import QtWidgets
 from shiboken2 import wrapInstance
@@ -13,7 +14,10 @@ def mayaMainWindow():
     """
     mainWindowPtr = omui.MQtUtil.mainWindow()
     if mainWindowPtr:
-        return wrapInstance(long(mainWindowPtr), QtWidgets.QWidget)
+        if sys.version_info[0] < 3:
+            return wrapInstance(long(mainWindowPtr), QtWidgets.QWidget)  # noqa: F821
+        else:
+            return wrapInstance(int(mainWindowPtr), QtWidgets.QWidget)
     else:
         mayaMainWindow()
 

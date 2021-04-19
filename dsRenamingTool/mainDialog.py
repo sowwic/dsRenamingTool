@@ -1,6 +1,7 @@
+import os
+import json
 import pymel.core as pm
 import pymel.api as pma
-import json
 from PySide2 import QtWidgets
 from PySide2 import QtCore
 
@@ -9,6 +10,18 @@ from dsRenamingTool import aliasesDialog
 from dsRenamingTool.loggingFn import Logger
 from maya.app.general.mayaMixin import MayaQWidgetDockableMixin
 from shiboken2 import getCppPointer
+
+
+def add_widget_to_layout(widget, control_name):
+    if pm.workspaceControl(control_name, q=1, ex=1):
+        if os.sys.version_info[0] >= 3:
+            workspaceControlPtr = int(pma.MQtUtil.findControl(control_name))
+            widgetPtr = int(getCppPointer(widget)[0])
+        else:
+            workspaceControlPtr = long(pma.MQtUtil.findControl(control_name))
+            widgetPtr = long(getCppPointer(widget)[0])
+
+        pma.MQtUtil.addWidgetToMayaLayout(widgetPtr, workspaceControlPtr)
 
 
 class Dialog(MayaQWidgetDockableMixin, QtWidgets.QWidget):
@@ -44,13 +57,8 @@ class Dialog(MayaQWidgetDockableMixin, QtWidgets.QWidget):
         self.settings = self.loadSettings()
 
         self.workspaceControlName = "{0}WorkspaceControl".format(self.UI_NAME)
-        if pm.workspaceControl(self.workspaceControlName, q=1, ex=1):
-            workspaceControlPtr = long(pma.MQtUtil.findControl(self.workspaceControlName))
-            widgetPtr = long(getCppPointer(self)[0])
+        add_widget_to_layout(self, self.workspaceControlName)
 
-            pma.MQtUtil.addWidgetToMayaLayout(widgetPtr, workspaceControlPtr)
-
-        # self.setDockableParameters(heightSizingProperty="fixed", height=170)
         # UI setup
         self.createActions()
         self.createWidgets()
