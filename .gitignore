@@ -125,7 +125,7 @@ dmypy.json
 .pyre/
 
 #Project specific
-.vscode/settings.json
+.vscode/
 .dsToolEnv/
 .dsInstallerEnv/
 installer/

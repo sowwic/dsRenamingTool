@@ -1,0 +1,6 @@
+{
+    "mapping": "{side}_{name}_{index}_{suffix}",
+    "index_padding": 1,
+    "index_start": 0,
+    "suffix_aliases": {}
+}
