@@ -1,1 +1,1 @@
-from dsRenamingTool.mainDialog import Dialog
+from dsRenamingTool.main_dialog import Dialog

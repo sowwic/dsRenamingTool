@@ -1,8 +1,9 @@
 import os
 import json
+from string import Formatter
+
 import pymel.core as pm
 from dsRenamingTool import const
-from string import Formatter
 
 
 class Template(object):
@@ -14,12 +15,15 @@ class Template(object):
     def __repr__(self):
         return "Template {0}: {1}".format(self.name, self.mapping)
 
-    def __init__(self, data):
-        # type: (dict) -> None
-        self.data = data
+    def __init__(self, file_path):
+        # type: (str) -> None
+        self.name = os.path.basename(file_path).split(".")[0]
+        with open(file_path, "r") as json_file:
+            self.data = json.load(json_file)  # type: dict
 
     @property
     def is_default(self):
+        # type: () -> bool
         return self.name == "default"
 
     @property
@@ -34,6 +38,7 @@ class Template(object):
 
     @property
     def upper_case_suffix(self):
+        # type: () -> bool
         return self.data.get(self.UPPER_SUFFIX, False)
 
     @mapping.setter
@@ -70,6 +75,7 @@ class Template(object):
         return self.mapping.format_map(tokens_map)
 
     def get_suffix(self, node):
+        # type: (pm.PyNode) -> str
         node_type = pm.objectType(node)
         if node_type == "transform":
             dependNodes = pm.listRelatives(node, c=1)
@@ -79,13 +85,6 @@ class Template(object):
         if self.upper_case_suffix:
             suffix = suffix.upper()
         return suffix
-
-    @classmethod
-    def import_from_json(cls, file_path):
-        # type: (str) -> Template
-        with open(file_path, "r") as json_file:
-            data = json.load(json_file)  # type: dict
-        return cls(data)
 
     def export_to_json(self, file_path=None):
         # type: (str) -> None
@@ -101,6 +100,7 @@ class Template(object):
 
     @ staticmethod
     def list_template_files():
+        # type: () -> list[str]
         templates_dir = Template.get_templates_dir()
         template_paths = []
         for file_name in os.listdir(templates_dir):
@@ -111,7 +111,7 @@ class Template(object):
 
     @ classmethod
     def get_templates(cls):
-        return [cls.import_from_json(file_path) for file_path in cls.list_template_files()]
+        return [cls(file_path) for file_path in cls.list_template_files()]
 
 
 if __name__ == "__main__":

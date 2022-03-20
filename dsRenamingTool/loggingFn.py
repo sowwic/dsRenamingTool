@@ -7,7 +7,7 @@ import logging.handlers
 class Logger:
 
     LOGGER_NAME = "dsRenamingTool"
-    LEVEL_DEFAULT = logging.DEBUG
+    LEVEL_DEFAULT = logging.INFO
     _logger_obj = None  # type: logging.Logger
 
     @classmethod
