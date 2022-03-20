@@ -9,19 +9,18 @@ class Template(object):
 
     INDEX_PADDING = "index_padding"
     INDEX_START = "index_start"
+    UPPER_SUFFIX = "upper_case_suffix"
 
-    def __repr__(self) -> str:
+    def __repr__(self):
         return "Template {0}: {1}".format(self.name, self.mapping)
 
-    def __init__(self, file_path):
-        # type: (str) -> None
-        self.__name = os.path.basename(file_path).split(".")[0]
-        with open(file_path, "r") as json_file:
-            self.data = json.load(json_file)
+    def __init__(self, data):
+        # type: (dict) -> None
+        self.data = data
 
     @property
-    def name(self):
-        return self.__name
+    def is_default(self):
+        return self.name == "default"
 
     @property
     def suffix_aliases(self):
@@ -34,6 +33,14 @@ class Template(object):
         return self.data["mapping"]
 
     @property
+    def upper_case_suffix(self):
+        return self.data.get(self.UPPER_SUFFIX, False)
+
+    @mapping.setter
+    def mapping(self, fmt_string):
+        self.data["mapping"] = fmt_string
+
+    @property
     def is_indexed(self):
         return "index" in self.get_tokens()
 
@@ -41,6 +48,7 @@ class Template(object):
         return [fname for _, fname, _, _ in Formatter().parse(self.mapping) if fname]
 
     def generate_name(self, tokens_map, node=None):
+        # type: (dict, pm.PyNode) -> str
         suffix_req_but_not_provided = "suffix" in self.mapping and "suffix" not in tokens_map
         if node and suffix_req_but_not_provided:
             tokens_map["suffix"] = self.get_suffix(node)
@@ -67,7 +75,24 @@ class Template(object):
             dependNodes = pm.listRelatives(node, c=1)
             if dependNodes:
                 node_type = pm.objectType(dependNodes[0])
-        return self.suffix_aliases.get(node_type, "obj")
+        suffix = self.suffix_aliases.get(node_type, "obj")
+        if self.upper_case_suffix:
+            suffix = suffix.upper()
+        return suffix
+
+    @classmethod
+    def import_from_json(cls, file_path):
+        # type: (str) -> Template
+        with open(file_path, "r") as json_file:
+            data = json.load(json_file)  # type: dict
+        return cls(data)
+
+    def export_to_json(self, file_path=None):
+        # type: (str) -> None
+        if not file_path:
+            file_path = os.path.join(Template.get_templates_dir(), "{}.json".format(self.name))
+        with open(file_path, "w") as json_file:
+            json.dump(self.data, json_file, indent=4)
 
     @ staticmethod
     def get_templates_dir():
@@ -86,7 +111,7 @@ class Template(object):
 
     @ classmethod
     def get_templates(cls):
-        return [cls(file_path) for file_path in cls.list_template_files()]
+        return [cls.import_from_json(file_path) for file_path in cls.list_template_files()]
 
 
 if __name__ == "__main__":
