@@ -17,6 +17,7 @@ class Template(object):
 
     def __init__(self, file_path):
         # type: (str) -> None
+        self.file_path = file_path
         self.name = os.path.basename(file_path).split(".")[0]
         with open(file_path, "r") as json_file:
             self.data = json.load(json_file)  # type: dict
@@ -48,6 +49,10 @@ class Template(object):
     @property
     def is_indexed(self):
         return "index" in self.get_tokens()
+
+    @property
+    def on_disk(self):
+        return os.path.isfile(self.get_file_path_from_name())
 
     def get_tokens(self):
         return [fname for _, fname, _, _ in Formatter().parse(self.mapping) if fname]
@@ -86,10 +91,13 @@ class Template(object):
             suffix = suffix.upper()
         return suffix
 
+    def get_file_path_from_name(self):
+        return os.path.join(Template.get_templates_dir(), "{}.json".format(self.name))
+
     def export_to_json(self, file_path=None):
         # type: (str) -> None
         if not file_path:
-            file_path = os.path.join(Template.get_templates_dir(), "{}.json".format(self.name))
+            file_path = self.get_file_path_from_name()
         with open(file_path, "w") as json_file:
             json.dump(self.data, json_file, indent=4)
 
@@ -112,22 +120,3 @@ class Template(object):
     @ classmethod
     def get_templates(cls):
         return [cls(file_path) for file_path in cls.list_template_files()]
-
-
-if __name__ == "__main__":
-    sel = pm.selected()
-    # Temp renaming
-    for node in sel:
-        for temp in Template.get_templates():
-            tk_map = {"side": "temp",
-                      "name": "temp",
-                      "suffix": "temp"}
-            new_name = (temp.generate_name(tk_map, node=node))
-        node.rename(new_name)
-
-    # Actual naming
-    for node in sel:
-        tk_map = {"side": "c",
-                  "name": "test"}
-        new_name = (temp.generate_name(tk_map, node=node))
-        node.rename(new_name)
